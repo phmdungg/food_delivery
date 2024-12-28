@@ -34,22 +34,31 @@ class _AddFoodState extends State<AddFood> {
   }
 
   uploadItem() async {
-    Map<String, dynamic> addItem = {
-      'Image': '',
-      'Name': namecontroller.text,
-      'Price': pricecontroller.text,
-      'Detail': detailcontroller.text
-    };
-    await DatabaseMethods().addFootItem(addItem, value!).then((value) {
-      ScaffoldMessenger.of(context).showSnackBar((SnackBar(
-          backgroundColor: Colors.orangeAccent,
-          content: Text(
-            "Food item has been added",
-            style: TextStyle(
-              fontSize: 18.0,
-            ),
-          ))));
-    });
+    if(selectedImage != null && namecontroller.text != "" && pricecontroller.text != "" && detailcontroller.text != "") {
+      String addId = randomAlphaNumeric(10);
+
+      Reference firebaseStorageRef = FirebaseStorage.instance.ref().child(
+          "blogImages").child(addId);
+      final UploadTask task = firebaseStorageRef.putFile(selectedImage!);
+
+      var downloadUrl = await(await task).ref.getDownloadURL();
+      Map<String, dynamic> addItem = {
+        'Image': downloadUrl,
+        'Name': namecontroller.text,
+        'Price': pricecontroller.text,
+        'Detail': detailcontroller.text
+      };
+      await DatabaseMethods().addFootItem(addItem, value!).then((value) {
+        ScaffoldMessenger.of(context).showSnackBar((SnackBar(
+            backgroundColor: Colors.orangeAccent,
+            content: Text(
+              "Food item has been added",
+              style: TextStyle(
+                fontSize: 18.0,
+              ),
+            ))));
+      });
+    }
   }
 
   @override

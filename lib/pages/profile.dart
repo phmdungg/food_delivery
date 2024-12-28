@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:foodie/service/auth.dart';
 import 'package:foodie/service/shared_pref.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:random_string/random_string.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -11,6 +16,33 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   String? profile, name, email;
+  final ImagePicker _picker = ImagePicker();
+  File? selectedImage;
+
+  Future getImage() async {
+    var image = await _picker.pickImage(source: ImageSource.gallery);
+
+    selectedImage = File(image!.path);
+    setState(() {
+
+    });
+  }
+
+  uploadItem() async {
+    if(selectedImage != null) {
+      String addId = randomAlphaNumeric(10);
+
+      Reference firebaseStorageRef = FirebaseStorage.instance.ref().child(
+          "blogImages").child(addId);
+      final UploadTask task = firebaseStorageRef.putFile(selectedImage!);
+
+      var downloadUrl = await(await task).ref.getDownloadURL();
+      await SharedPreferenceHelper().saveUserProfile(downloadUrl);
+      setState(() {
+
+      });
+    }
+  }
 
   getthesharedpref() async {
     profile = await SharedPreferenceHelper().getUserProfile();
@@ -63,12 +95,17 @@ class _ProfileState extends State<Profile> {
                       borderRadius: BorderRadius.circular(60),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(60),
-                        child: Image.asset(
-                          "images/boy.jpg",
-                          height: 120,
-                          width: 120,
-                          fit: BoxFit.cover,
-                        ),
+                        child: selectedImage == null ? GestureDetector(
+                          onTap: () {
+                            getImage();
+                          },
+                          child: profile == null ? Image.asset("images/boy.jpg", height: 120, width: 120, fit: BoxFit.cover,): Image.network(
+                            profile!,
+                            height: 120,
+                            width: 120,
+                            fit: BoxFit.cover,
+                          ),
+                        ): Image.file(selectedImage!),
                       ),
                     ),
                   ),
